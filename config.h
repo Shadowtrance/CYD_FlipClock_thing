@@ -8,20 +8,19 @@
 
 
 // --- 2. Time Configuration ---
-static const bool TIME_FORMAT_24H = false;       
-static const bool DST_ACTIVE = true;         
+static const bool TIME_FORMAT_24H = true;       
+static const bool DST_ACTIVE = false;         
 static const char* ntpServer = "pool.ntp.org"; 
 
-// --- 3. XPT2046 TOUCH SCREEN PINS (CYD Default) ---
-#define TS_CS 33   
-#define TS_IRQ 36  
-#define TS_MOSI 32 
-#define TS_MISO 39 
-#define TS_CLK 25  
+// --- 3. TOUCH SCREEN PINS ---
+#define TS_SDA 33     
+#define TS_SCL 32 
+#define TS_INT 21 
+#define TS_RST 25  
 
 // --- MODE SELECTORS ---
 static const bool USE_CITY_ID = false; 
-static const bool USE_FAHRENHEIT = true; 
+static const bool USE_FAHRENHEIT = false; 
 
 // Interval to fetch new weather data (in minutes). 
 // Note: This is now an unsigned long value (in milliseconds)

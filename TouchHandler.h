@@ -2,8 +2,8 @@
 #define TOUCHHANDLER_H
 
 #include <Arduino.h>
-#include <XPT2046_Touchscreen.h>
-#include <SPI.h> 
+#include <Wire.h>
+#include <bb_captouch.h>
 
 // --- EXTERNAL DEPENDENCIES ---
 extern const int DISPLAY_WIDTH;
@@ -11,20 +11,12 @@ extern const int DISPLAY_HEIGHT;
 // -----------------------------
 
 // --- OBJECT DEFINITIONS (Required for linker) ---
-SPIClass touchSPI(VSPI); 
-XPT2046_Touchscreen ts(TS_CS, TS_IRQ); 
+BBCapTouch bbct;
 // -----------------------------------------------------------------
 
-// --- FINAL TOUCH CALIBRATION VALUES (Tested and Confirmed) ---
-const uint16_t X_MIN_RAW = 1000; 
-const uint16_t X_MAX_RAW = 4000; 
-const uint16_t Y_MIN_RAW = 250;  // ADJUSTED FROM 245 to 250
-const uint16_t Y_MAX_RAW = 4800; 
-// ----------------------------------------------------
-
 // --- Touch Detection Variables ---
-const long DEBOUNCE_DELAY_MS = 45;     
-const long DOUBLE_CLICK_TIME_MS = 600; 
+const long DEBOUNCE_DELAY_MS = 25;     
+const long DOUBLE_CLICK_TIME_MS = 300; 
 const long LONG_PRESS_TIME_MS = 2000;  // 2 seconds for long press
 
 uint16_t touchX = 0, touchY = 0;       
@@ -39,11 +31,12 @@ int pressCount = 0;
  */
 void checkTouch(int *touchEvent) {
 
-    bool currentTouched = ts.touched();
+    TOUCHINFO ti;
+    bool currentTouched = bbct.getSamples(&ti);
     
     if (currentTouched && !isTouched) {
         delay(DEBOUNCE_DELAY_MS);
-        currentTouched = ts.touched();
+        currentTouched = bbct.getSamples(&ti);
     }
     
     if (currentTouched) {
@@ -52,29 +45,10 @@ void checkTouch(int *touchEvent) {
             touchStartTime = millis(); // Start tracking press duration
         }
         
-        // Read raw point data
-        TS_Point p = ts.getPoint();
-        
-        // --- FINAL FIX LOGIC: 90-degree swap + X-axis flip (Correct Order) ---
-
-        // 1. RAW DATA TRANSLATION
-        // Calculate screen Y (320-dimension) from the raw Y data (p.y).
-        // Y-axis is NOT inverted. Range adjusted via Y_MAX_RAW/Y_MIN_RAW.
-        uint16_t tempX = map(p.y, Y_MIN_RAW, Y_MAX_RAW, 0, DISPLAY_WIDTH); 
-
-        // Calculate screen X (240-dimension) from the raw X data (p.x).
-        // X-axis IS INVERTED (MAX -> MIN). Range adjusted via X_MIN_RAW/X_MAX_RAW.
-        uint16_t tempY = map(p.x, X_MAX_RAW, X_MIN_RAW, 0, DISPLAY_HEIGHT); 
-
-        // 2. FINAL ASSIGNMENT: Swap the results to fix the 90-degree rotation.
-        touchX = tempY; // Screen X (0-240) gets the X calculation (inverted)
-        touchY = tempX; // Screen Y (0-320) gets the Y calculation (adjusted range)
-        
-        // Clamp
-        if (touchX > DISPLAY_WIDTH) touchX = DISPLAY_WIDTH;
-        if (touchY > DISPLAY_HEIGHT) touchY = DISPLAY_HEIGHT;
-        if (touchX < 0) touchX = 0;
-        if (touchY < 0) touchY = 0;
+        if (ti.count > 0) {
+            touchX = ti.x[0];
+            touchY = ti.y[0];
+        }
     } else {
         if (isTouched) { 
             isTouched = false;

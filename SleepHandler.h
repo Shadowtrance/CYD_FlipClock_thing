@@ -32,7 +32,7 @@ void enterDeepSleep() {
     touchEvent = 0; 
 
     // 3. Configure the external wake-up source
-    const uint64_t wakeUpPinMask = (1ULL << TS_IRQ);
+    const uint64_t wakeUpPinMask = (1ULL << TS_INT);
     esp_sleep_enable_ext1_wakeup(wakeUpPinMask, ESP_EXT1_WAKEUP_ALL_LOW);
 
     // 4. Enter Deep Sleep

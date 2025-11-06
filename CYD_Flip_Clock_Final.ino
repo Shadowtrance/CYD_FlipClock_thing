@@ -4,10 +4,9 @@
 #include <time.h>
 #include <TFT_eSPI.h> 
 #include <esp_sleep.h> 
-#include <SPI.h> 
-#include <XPT2046_Touchscreen.h> 
+#include <Wire.h>
+#include <bb_captouch.h>
 #include <WiFiClientSecure.h> 
-// #include <Preferences.h>      // REMOVED - Now included in ConfigHandler.h
 
 // CRITICAL: FS.h must be included before WebServer.h to prevent compiler errors
 #include <FS.h>
@@ -33,13 +32,12 @@ using namespace fs;
 #include "PortalHandler.h"   
 
 // --- EXTERN DECLARATIONS FOR TOUCH OBJECTS ---
-extern SPIClass touchSPI;
-extern XPT2046_Touchscreen ts;
+extern BBCapTouch bbct;
 extern void checkTouch(int *touchEvent);
 // ------------------------------------------------------------------
 
 // --- GLOBAL CONSTANTS DEFINITIONS ---
-const int LED_PIN = 21;
+const int LED_PIN = 27;
 const int DISPLAY_WIDTH = 320;
 const int DISPLAY_HEIGHT = 240;
 // ----------------------------------------------------------------
@@ -481,15 +479,23 @@ void setup() {
     digitalWrite(LED_PIN, HIGH);
     // Turn backlight on at boot
     
+    pinMode(4, OUTPUT);
+    pinMode(16, OUTPUT);
+    pinMode(17, OUTPUT);
+    digitalWrite(4, HIGH);
+    digitalWrite(16, HIGH);
+    digitalWrite(17, HIGH);
+    //Turn off RGB LED
+    
     loadConfig(); 
     // CRITICAL: Load configuration immediately
 
     tft.init();
-    tft.setRotation(1); 
+    tft.setRotation(3); 
     tft.fillScreen(COLOR_BACKGROUND);
     // Initialize Touchscreen
-    touchSPI.begin(TS_CLK, TS_MISO, TS_MOSI, -1);
-    ts.begin(touchSPI);
+    bbct.init(TS_SDA, TS_SCL, TS_RST, TS_INT);
+    bbct.setOrientation(270, DISPLAY_HEIGHT, DISPLAY_WIDTH);
     
     setupTime();
     // Connect to WiFi and get NTP time
